@@ -17,7 +17,8 @@ def scrape_all():
         "news_paragraph": news_paragraph,
         "featured_image": featured_image(browser),
         "facts": mars_facts(),
-        "last_modified": dt.datetime.now()
+        "last_modified": dt.datetime.now(),
+        "hemispheres" : mars_hemi(browser)
     }
 
     # Stop webdriver and return data
@@ -95,4 +96,36 @@ def mars_facts():
     df.set_index('Description', inplace=True)
 
     # Convert dataframe into HTML format, add bootstrap
-    return df.to_html()
+    return df.to_html(classes=["table-bordered", "table-striped", "table-hover"])
+
+def mars_hemi(browser):
+
+    # Use browser to visit the URL 
+    url = 'https://marshemispheres.com/'
+    browser.visit(url)
+
+    # Create a list to hold the images and titles.
+    hemisphere_image_urls = []
+    links = []
+
+    links_found = browser.links.find_by_partial_text('Enhanced')
+
+    # Store links in list to prevent them from going stale on page change
+    for l in range(len(links_found)):
+        links.append(links_found[l]['href'])
+
+    # Loop through links and collect image link and title then add it to the hemisphere_image_urls list
+    for l in links:
+        print(f'Visiting {l}')
+        browser.visit(l)
+        link_list = {
+            'img_url' : browser.links.find_by_partial_text('Sample')['href'],
+            'title' : browser.find_by_css('h2').first.value
+        }
+        hemisphere_image_urls.append(link_list)
+        browser.visit(url)
+
+    # Quit the browser
+    browser.quit()
+
+    return hemisphere_image_urls
